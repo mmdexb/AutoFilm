@@ -7,12 +7,11 @@ import argparse, os, requests, time
 如果depth为正整数，则会递归遍历到指定深度
 如果depth为0，则只会遍历当前文件夹中的文件和文件夹，不会继续递归遍历下一级文件夹。
 '''
-def list_files(webdav_url, username, password, show_path, depth=None, path='', count=0, proxies=None):
+def list_files(webdav_url, username, password, depth=None, path='', count=0):
     options = {
         'webdav_hostname': webdav_url,
         'webdav_login': username,
-        'webdav_password': password,
-        'proxies': proxies
+        'webdav_password': password
     }
 
     client = Client(options)
@@ -46,7 +45,7 @@ def list_files(webdav_url, username, password, show_path, depth=None, path='', c
         else:
             files.append(item)
             count += 1
-    if show_path and path:
+    if path:
         print(f'当前文件夹路径：{path}')
     return directory, files, count
 
@@ -59,7 +58,7 @@ def download_file(url, local_path, filename, total_count):
     while p < 10:
         try:
             print('正在下载：' + filename)
-            r = requests.get(url.replace('/dav', '/d'), proxies=proxies)
+            r = requests.get(url.replace('/dav', '/d'))
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, 'wb') as f:
                 f.write(r.content)
@@ -84,8 +83,6 @@ parser.add_argument('--output_path', type=str, help='输出文件目录', defaul
 parser.add_argument('--subtitle', type=str, help='是否下载字幕文件', choices=['true', 'false'], default='true')
 parser.add_argument('--nfo', type=str, help='是否下载NFO文件', choices=['true', 'false'], default='false')
 parser.add_argument('--img', type=str, help='是否下载JPG和PNG文件', choices=['true', 'false'], default='false')
-parser.add_argument('--show_path', type=str, help='遍历时是否显示文件夹路径', choices=['true', 'false'], default='false')
-parser.add_argument('--proxy', type=str, help='HTTP代理服务器，格式为IP:端口号')
 args = parser.parse_args()
 
 print('启动参数：')
@@ -96,16 +93,8 @@ print(f'文件输出路径：{args.output_path}')
 print(f'是否下载字幕：{args.subtitle}')
 print(f'是否下载电影信息：{args.nfo}')
 print(f'是否下载图片：{args.img}')
-print(f'遍历时是否显示文件夹路径：{args.show_path}')
 
-proxies = None
-if args.proxy:
-    proxies = {
-        'http': f'http://{args.proxy}',
-        'https': f'http://{args.proxy}'
-    }
-
-directory, files, count = list_files(args.webdav_url, args.username, args.password, args.show_path, depth=None, path='', count=0, proxies=proxies)
+directory, files, count = list_files(args.webdav_url, args.username, args.password, depth=None, path='', count=0)
 
 urls = [args.webdav_url + item for item in directory + files]
 
